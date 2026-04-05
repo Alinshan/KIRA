@@ -22,17 +22,17 @@ from livekit.agents.voice import Agent, AgentSession
 from livekit.agents.llm import mcp
 
 # Plugins
-from livekit.plugins import google as lk_google, openai as lk_openai, sarvam, silero
+from livekit.plugins import google as lk_google, sarvam, silero, openai, deepgram
 
 # ---------------------------------------------------------------------------
 # CONFIG
 # ---------------------------------------------------------------------------
 
 STT_PROVIDER       = "sarvam"
-LLM_PROVIDER       = "gemini"
-TTS_PROVIDER       = "openai"
-
+LLM_PROVIDER       = "groq"
+TTS_PROVIDER       = "deepgram"
 GEMINI_LLM_MODEL   = "gemini-2.5-flash"
+GROQ_LLM_MODEL     = "llama-3.1-8b-instant"
 OPENAI_LLM_MODEL   = "gpt-4o"
 
 OPENAI_TTS_MODEL   = "tts-1"
@@ -183,7 +183,10 @@ def _mcp_server_url() -> str:
 # ---------------------------------------------------------------------------
 
 def _build_stt():
-    if STT_PROVIDER == "sarvam":
+    if STT_PROVIDER == "google":
+        logger.info("STT → Google Cloud")
+        return lk_google.STT()
+    elif STT_PROVIDER == "sarvam":
         logger.info("STT → Sarvam Saaras v3")
         return sarvam.STT(
             language="unknown",
@@ -192,36 +195,47 @@ def _build_stt():
             flush_signal=True,
             sample_rate=16000,
         )
-    elif STT_PROVIDER == "whisper":
-        logger.info("STT → OpenAI Whisper")
-        return lk_openai.STT(model="whisper-1")
     else:
         raise ValueError(f"Unknown STT_PROVIDER: {STT_PROVIDER!r}")
 
 
 def _build_llm():
-    if LLM_PROVIDER == "openai":
-        logger.info("LLM → OpenAI (%s)", OPENAI_LLM_MODEL)
-        return lk_openai.LLM(model=OPENAI_LLM_MODEL)
-    elif LLM_PROVIDER == "gemini":
+    if LLM_PROVIDER == "gemini":
         logger.info("LLM → Google Gemini (%s)", GEMINI_LLM_MODEL)
         return lk_google.LLM(model=GEMINI_LLM_MODEL, api_key=os.getenv("GOOGLE_API_KEY"))
+    elif LLM_PROVIDER == "groq":
+        logger.info("LLM → Groq (%s)", GROQ_LLM_MODEL)
+        return openai.LLM(
+            model=GROQ_LLM_MODEL,
+            api_key=os.getenv("GROQ_API_KEY"),
+            base_url="https://api.groq.com/openai/v1"
+        )
     else:
         raise ValueError(f"Unknown LLM_PROVIDER: {LLM_PROVIDER!r}")
 
 
 def _build_tts():
-    if TTS_PROVIDER == "sarvam":
+    if TTS_PROVIDER == "silero":
+        logger.info("TTS → Silero (Local)")
+        return silero.TTS()
+    elif TTS_PROVIDER == "google":
+        logger.info("TTS → Google Cloud")
+        return lk_google.TTS()
+    elif TTS_PROVIDER == "openai":
+        logger.info("TTS → OpenAI")
+        return openai.TTS(model=OPENAI_TTS_MODEL, voice=OPENAI_TTS_VOICE)
+    elif TTS_PROVIDER == "deepgram":
+        logger.info("TTS → Deepgram Aura")
+        return deepgram.TTS(model="aura-asteria-en")
+    elif TTS_PROVIDER == "sarvam":
         logger.info("TTS → Sarvam Bulbul v3")
         return sarvam.TTS(
+            api_key=os.getenv("SARVAM_API_KEY"),
             target_language_code=SARVAM_TTS_LANGUAGE,
-            model="bulbul:v3",
+            model="bulbul:v1",
             speaker=SARVAM_TTS_SPEAKER,
             pace=TTS_SPEED,
         )
-    elif TTS_PROVIDER == "openai":
-        logger.info("TTS → OpenAI TTS (%s / %s)", OPENAI_TTS_MODEL, OPENAI_TTS_VOICE)
-        return lk_openai.TTS(model=OPENAI_TTS_MODEL, voice=OPENAI_TTS_VOICE, speed=TTS_SPEED)
     else:
         raise ValueError(f"Unknown TTS_PROVIDER: {TTS_PROVIDER!r}")
 
@@ -254,12 +268,14 @@ class KiraAgent(Agent):
 
     async def on_enter(self) -> None:
         """Greet the user specifically for the late-night lab session."""
-        await self.session.generate_reply(
-            instructions=(
-                "Greet the user exactly with: 'Greetings boss, you're awake late at night today. What you up to?' "
-                "Maintain a helpful but dry tone."
+        print("DEBUG: KIRA on_enter triggered")
+        if hasattr(self, "session") and self.session:
+            await self.session.say(
+                "Greetings boss, you're awake late at night today. What you up to?",
+                allow_interruptions=False
             )
-        )
+        else:
+            print("DEBUG: self.session not found on agent")
 
 
 # ---------------------------------------------------------------------------
@@ -275,32 +291,43 @@ def _endpointing_delay() -> float:
 
 
 async def entrypoint(ctx: JobContext) -> None:
-    logger.info(
-        "KIRA online – room: %s | STT=%s | LLM=%s | TTS=%s",
-        ctx.room.name, STT_PROVIDER, LLM_PROVIDER, TTS_PROVIDER,
-    )
+    logger.info("--- ENTRYPOINT CALLED (AGENT JOINING ROOM) ---")
+    try:
+        logger.info(
+            "KIRA online – room: %s | STT=%s | LLM=%s | TTS=%s",
+            ctx.room.name, STT_PROVIDER, LLM_PROVIDER, TTS_PROVIDER,
+        )
 
-    stt = _build_stt()
-    llm = _build_llm()
-    tts = _build_tts()
+        stt = _build_stt()
+        llm = _build_llm()
+        tts = _build_tts()
 
-    session = AgentSession(
-        turn_detection=_turn_detection(),
-        min_endpointing_delay=_endpointing_delay(),
-    )
+        session = AgentSession()
 
-    await session.start(
-        agent=KiraAgent(stt=stt, llm=llm, tts=tts),
-        room=ctx.room,
-    )
+        agent = KiraAgent(stt=stt, llm=llm, tts=tts)
+        await session.start(
+            agent=agent,
+            room=ctx.room,
+        )
+        # Trigger the greeting manually since the framework might not do it automatically
+        await agent.on_enter()
+    except Exception as e:
+        logger.error(f"CRITICAL STARTUP ERROR: {e}", exc_info=True)
+        print(f"\n!!! CRITICAL STARTUP ERROR !!!\n{e}\n")
 
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
+
+
 def main():
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
+    cli.run_app(
+        WorkerOptions(
+            entrypoint_fnc=entrypoint,
+        )
+    )
 
 def dev():
     """Wrapper to run the agent in dev mode automatically."""
