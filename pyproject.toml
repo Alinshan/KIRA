@@ -1,5 +1,5 @@
 [project]
-name = "kira-tony-stark-demo"
+name = "kira"
 version = "0.1.0"
 description = "Kira — A Tony Stark-inspired MCP server"
 readme = "README.md"
