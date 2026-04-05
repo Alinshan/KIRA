@@ -7,11 +7,13 @@ requires-python = ">=3.11"
 dependencies = [
     "fastmcp",
     "httpx",
+    "livekit-agents[deepgram,groq,openai,sarvam,silero]>=1.5.1",
     "python-dotenv",
 ]
 
 [project.scripts]
 friday = "server:main"
+friday_voice = "agent_friday:dev" # Points to the wrapper
 
 [build-system]
 requires = ["hatchling"]
