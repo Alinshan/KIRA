@@ -126,12 +126,12 @@ Running **K.I.R.A** requires initializing both the intelligence backend and the 
 
 **Terminal 1 — Intelligence Backend (Start Here)**
 ```bash
-uv run kira
+python -m uv run kira
 ```
 
 **Terminal 2 — Voice Pipeline**
 ```bash
-uv run kira_voice
+python -m uv run python agent_kira.py dev
 ```
 *To interact directly with K.I.R.A, navigate to the [LiveKit Agents Playground](https://agents-playground.livekit.io) and establish a room connection.*
 
@@ -141,8 +141,8 @@ uv run kira_voice
 
 | Launch Command | Execution Path | Description |
 |----------------|----------------|-------------|
-| `uv run kira` | `server.py → main()` | Launches the **FastMCP backend**. Handles all tool registrations, resource allocations, and prompt schemas for LLM access. |
-| `uv run kira_voice` | `agent_kira.py → dev()` | Launches the **LiveKit pipeline**. Orchestrates STT, LLM, and TTS module threading while resolving MCP SSE queries. |
+| `python -m uv run kira` | `server.py → main()` | Launches the **FastMCP backend**. Handles all tool registrations, resource allocations, and prompt schemas for LLM access. |
+| `python -m uv run python agent_kira.py dev` | `agent_kira.py → dev()` | Launches the **LiveKit pipeline**. Orchestrates STT, LLM, and TTS module threading while resolving MCP SSE queries. |
 
 ---
 
