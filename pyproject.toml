@@ -1,0 +1,18 @@
+[project]
+name = "friday-tony-stark-demo"
+version = "0.1.0"
+description = "Friday — A Tony Stark-inspired MCP server"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastmcp",
+    "httpx",
+    "python-dotenv",
+]
+
+[project.scripts]
+friday = "server:mcp"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
