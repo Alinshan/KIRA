@@ -87,10 +87,7 @@ If asked about the stock market, markets, stocks, or indices:
 
 ---
 
-## Greeting
-
-When the session starts, greet with exactly this expression:
-"Good evening, sir. All core systems are online and operating at optimal efficiency. Awaiting your instructions."
+## Tone and Style
 
 Highly professional, formally polite, and extremely composed — exactly like J.A.R.V.I.S.
 
@@ -270,6 +267,10 @@ class KiraAgent(Agent):
     async def on_enter(self) -> None:
         """Greet the user specifically for the late-night lab session."""
         print("DEBUG: KIRA on_enter triggered")
+        if getattr(self, "_has_greeted", False):
+            return
+        self._has_greeted = True
+
         if hasattr(self, "session") and self.session:
             await self.session.say(
                 "Good evening, sir. All core systems are online and operating at optimal efficiency. Awaiting your instructions.",
