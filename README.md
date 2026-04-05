@@ -3,13 +3,7 @@
   <h1>K.I.R.A</h1>
   <p><strong>Knowledge-based Intelligent Response Assistant</strong></p>
 
-  <p>
-    <a href="https://github.com/Alinshan/KIRA/stargazers"><img src="https://img.shields.io/github/stars/Alinshan/KIRA?style=for-the-badge&color=e0a96d" alt="Stars Badge"/></a>
-    <a href="https://github.com/Alinshan/KIRA/network/members"><img src="https://img.shields.io/github/forks/Alinshan/KIRA?style=for-the-badge&color=e0a96d" alt="Forks Badge"/></a>
-    <a href="https://github.com/Alinshan/KIRA/pulls"><img src="https://img.shields.io/github/issues-pr/Alinshan/KIRA?style=for-the-badge&color=e0a96d" alt="Pull Requests Badge"/></a>
-    <a href="https://github.com/Alinshan/KIRA/issues"><img src="https://img.shields.io/github/issues/Alinshan/KIRA?style=for-the-badge&color=e0a96d" alt="Issues Badge"/></a>
-    <a href="https://github.com/Alinshan/KIRA/blob/master/LICENSE"><img src="https://img.shields.io/github/license/Alinshan/KIRA?style=for-the-badge&color=e0a96d" alt="License Badge"/></a>
-  </p>
+
 
   <p><i>State-of-the-Art Real-Time Voice Assistant Powered by the Model Context Protocol (MCP) and LiveKit.</i></p>
 </div>
