@@ -1,167 +1,206 @@
-# F.R.I.D.A.Y. — Tony Stark Demo
+<div align="center">
+  <h1>K.I.R.A</h1>
+  <p><strong>Knowledge-based Intelligent Response Assistant</strong></p>
 
-> *"Fully Responsive Intelligent Digital Assistant for You"*
+  <p>
+    <a href="https://github.com/Alinshan/KIRA/stargazers"><img src="https://img.shields.io/github/stars/Alinshan/KIRA?style=for-the-badge&color=e0a96d" alt="Stars Badge"/></a>
+    <a href="https://github.com/Alinshan/KIRA/network/members"><img src="https://img.shields.io/github/forks/Alinshan/KIRA?style=for-the-badge&color=e0a96d" alt="Forks Badge"/></a>
+    <a href="https://github.com/Alinshan/KIRA/pulls"><img src="https://img.shields.io/github/issues-pr/Alinshan/KIRA?style=for-the-badge&color=e0a96d" alt="Pull Requests Badge"/></a>
+    <a href="https://github.com/Alinshan/KIRA/issues"><img src="https://img.shields.io/github/issues/Alinshan/KIRA?style=for-the-badge&color=e0a96d" alt="Issues Badge"/></a>
+    <a href="https://github.com/Alinshan/KIRA/blob/master/LICENSE"><img src="https://img.shields.io/github/license/Alinshan/KIRA?style=for-the-badge&color=e0a96d" alt="License Badge"/></a>
+  </p>
 
-A Tony Stark-inspired AI assistant split into two cooperating pieces:
-
-| Component | What it is |
-|-----------|-----------|
-| **MCP Server** (`uv run friday`) | A [FastMCP](https://github.com/jlowin/fastmcp) server that exposes tools (news, web search, system info, …) over SSE. Think of it as the Stark Industries backend — it does the actual work. |
-| **Voice Agent** (`uv run friday_voice`) | A [LiveKit Agents](https://github.com/livekit/agents) voice pipeline that listens to your microphone, reasons with an LLM (Gemini 2.5 Flash by default), and speaks back with OpenAI TTS — all while pulling tools from the MCP server in real time. |
-
-Demo: [Instagram reel](https://www.instagram.com/p/DW2HjYtkwg_/)
-
-[![Demo Video Guide](https://img.youtube.com/vi/mMY9swqe3BI/maxresdefault.jpg)](https://www.youtube.com/watch?v=mMY9swqe3BI)
-
----
-
-## How it works
-
-```
-Microphone ──► STT (Sarvam Saaras v3)
-                    │
-                    ▼
-             LLM (Gemini 2.5 Flash)  ◄──────► MCP Server (FastMCP / SSE)
-                    │                              ├─ get_world_news
-                    ▼                              ├─ open_world_monitor
-             TTS (OpenAI nova)                     ├─ search_web
-                    │                              └─ …more tools
-                    ▼
-             Speaker / LiveKit room
-```
-
-The voice agent connects to the MCP server via SSE at `http://127.0.0.1:8000/sse` (auto-resolved to the Windows host IP when running inside WSL).
+  <p><i>State-of-the-Art Real-Time Voice Assistant Powered by the Model Context Protocol (MCP) and LiveKit.</i></p>
+</div>
 
 ---
 
-## Project structure
+## 📖 Table of Contents
+- [About the Project](#about-the-project)
+- [Architecture](#architecture-overview)
+- [Features](#key-features)
+- [Directory Structure](#repository-structure)
+- [Getting Started](#getting-started)
+- [CLI Reference](#cli-commands)
+- [Configuration](#environment-variables)
+- [Advanced Usage](#advanced-usage)
+- [Tech Stack](#tech-stack)
+- [License](#license)
 
+---
+
+## 🤖 About the Project
+
+**K.I.R.A** (Knowledge-based Intelligent Response Assistant) is a highly capable voice AI system built for real-time conversation and tool execution. It utilizes an extensible dual-component architectural design:
+
+1. **The Intelligence Engine (MCP Server)**: An extensible backend ([FastMCP](https://github.com/jlowin/fastmcp)) that securely exposes diagnostic telemetry, web interactions, and custom utility tools over Server-Sent Events (SSE).
+2. **The Voice Pipeline (Voice Agent)**: A low-latency conversational routing pipeline ([LiveKit](https://github.com/livekit/agents)) that processes microphone input, leverages LLM reasoning (Gemini 2.5 Flash), and streams highly expressive text-to-speech outputs dynamically.
+
+---
+
+## 🏗 Architecture Overview
+
+```mermaid
+graph TD;
+    A[Microphone Stream] -->|Audio| B(STT: Sarvam Saaras v3);
+    B -->|Transcription| C{LLM: Gemini 2.5 Flash};
+    C <-->|Function Calling| D[MCP Server Frontend];
+    C -->|Response Routing| E(TTS: OpenAI nova);
+    E -->|Audio Stream| F[Speaker / LiveKit Room];
+    
+    subgraph KIRA MCP Backend
+        D --> G[Web Search Module]
+        D --> H[World News Aggregator]
+        D --> I[System Diagnostics Module]
+    end
 ```
-friday-tony-stark-demo/
-├── server.py           # uv run friday  → starts the MCP server (SSE on :8000)
-├── agent_friday.py     # uv run friday_voice → starts the LiveKit voice agent
-├── pyproject.toml
-├── .env.example        # copy → .env and fill in your keys
+
+*The Voice Agent communicates with the MCP Server securely over an SSE channel at `http://127.0.0.1:8000/sse`.*
+
+---
+
+## ✨ Key Features
+
+- **Blazing Fast Conversational Engine**: Designed for highly responsive voice interactions with zero-latency streaming.
+- **Robust Tool Execution Ecosystem**: Securely extend the assistant's capabilities through standardized modular MCP scripts.
+- **Dynamic Provider Switching**: Instantly switch between leading models (Gemini, OpenAI, Sarvam, Deepgram) without rewriting core logic.
+- **Cross-Platform Compatibility**: Supports native execution, including automated host-resolution for Windows Subsystem for Linux (WSL).
+
+---
+
+## 📂 Repository Structure
+
+```text
+KIRA/
+├── server.py           # Entry Point: Initializes the FastMCP Server (SSE on port 8000)
+├── agent_kira.py       # Entry Point: Initializes the LiveKit Voice Agent Pipeline
+├── pyproject.toml      # Project Metadata & Dependency Definitions
+├── .env.example        # Environment Variable Scaffold
 │
-└── friday/             # MCP server package
-    ├── config.py       # env-var loading & app-wide settings
-    ├── tools/          # MCP tools (callable by the LLM)
-    │   ├── web.py      # search_web, fetch_url, get_world_news, open_world_monitor
-    │   ├── system.py   # get_current_time, get_system_info
-    │   └── utils.py    # format_json, word_count
-    ├── prompts/        # MCP prompt templates (summarize, explain_code, …)
-    └── resources/      # MCP resources exposed to clients (friday://info)
+└── kira/               # Core Framework Package
+    ├── config.py       # Secure API key loading & application configurations
+    ├── tools/          # Extensible MCP Tool Registry
+    │   ├── web.py      # Implementations for dynamic web scraping & API fetching
+    │   ├── system.py   # Implementations for local telemetry & metric extraction
+    │   └── utils.py    # Formatting & structural utility functions
+    ├── prompts/        # Systemic prompt templating registry
+    └── resources/      # Static / Dynamic resources exposed over MCP
 ```
 
 ---
 
-## Quick start
+## 🚀 Getting Started
 
-### 1. Prerequisites
+Follow these instructions to get a local copy up and running in minutes.
 
-- Python ≥ 3.11
-- [`uv`](https://github.com/astral-sh/uv) — `pip install uv` or `curl -Lsf https://astral.sh/uv/install.sh | sh`
-- A [LiveKit Cloud](https://cloud.livekit.io) project (free tier works)
+### 1. System Prerequisites
 
-### 2. Clone & install
+Verify your system meets the following criteria before installation:
+- **Python** `v3.11` or higher
+- **[uv](https://github.com/astral-sh/uv)** package manager: 
+  > `pip install uv` or `curl -Lsf https://astral.sh/uv/install.sh | sh`
+- **[LiveKit Cloud](https://cloud.livekit.io)** project (*The free tier is sufficient for deployment.*)
+
+### 2. Installation
+
+Clone the repository and install dependency requirements effortlessly:
 
 ```bash
-git clone https://github.com/SAGAR-TAMANG/friday-tony-stark-demo.git
-cd friday-tony-stark-demo
-uv sync          # creates .venv and installs all dependencies
+git clone https://github.com/Alinshan/KIRA.git
+cd KIRA
+uv sync
 ```
 
-### 3. Set up environment
+### 3. Environment Configuration
+
+Clone the configuration template and safely inject your API keys:
 
 ```bash
 cp .env.example .env
-# Open .env and fill in your API keys (see the section below)
 ```
+*(Refer to the [Environment Variables](#environment-variables) section for configuration options).*
 
-### 4. Run — two terminals
+### 4. Running the System
 
-**Terminal 1 — MCP server** (must start first)
+Running **K.I.R.A** requires initializing both the intelligence backend and the voice pipeline concurrently via two terminal sessions.
 
+**Terminal 1 — Intelligence Backend (Start Here)**
 ```bash
-uv run friday
+uv run kira
 ```
 
-Starts the FastMCP server on `http://127.0.0.1:8000/sse`. The voice agent connects here to fetch its tools.
-
-**Terminal 2 — Voice agent**
-
+**Terminal 2 — Voice Pipeline**
 ```bash
-uv run friday_voice
+uv run kira_voice
 ```
-
-Starts the LiveKit voice agent in **dev mode** — it joins a LiveKit room and begins listening. Open the [LiveKit Agents Playground](https://agents-playground.livekit.io) and connect to your room to talk to FRIDAY.
+*To interact directly with K.I.R.A, navigate to the [LiveKit Agents Playground](https://agents-playground.livekit.io) and establish a room connection.*
 
 ---
 
-## `uv run friday` vs `uv run friday_voice`
+## ⚙️ CLI Commands
 
-| Command | Entry point | What it does |
-|---------|------------|--------------|
-| `uv run friday` | `server.py → main()` | Launches the **FastMCP server** over SSE transport on port 8000. This is the "brain backend" — it registers all tools, prompts, and resources that the LLM can call. |
-| `uv run friday_voice` | `agent_friday.py → dev()` | Launches the **LiveKit voice agent**. It builds the STT / LLM / TTS pipeline, connects to your LiveKit room, and wires up the MCP server as a tool source. The `dev()` wrapper auto-injects the `dev` CLI flag so you don't have to type it manually. |
-
-> Both processes must run **simultaneously**. The voice agent calls the MCP server in real time whenever it needs a tool (e.g. fetching news).
+| Launch Command | Execution Path | Description |
+|----------------|----------------|-------------|
+| `uv run kira` | `server.py → main()` | Launches the **FastMCP backend**. Handles all tool registrations, resource allocations, and prompt schemas for LLM access. |
+| `uv run kira_voice` | `agent_kira.py → dev()` | Launches the **LiveKit pipeline**. Orchestrates STT, LLM, and TTS module threading while resolving MCP SSE queries. |
 
 ---
 
-## Environment variables
+## 🔐 Environment Variables
 
-Copy `.env.example` → `.env` and fill in the values below.
+Ensure `.env` matches the criteria below:
 
-| Variable | Required | Where to get it |
+| Variable | Protocol | Service Origin |
 |----------|----------|----------------|
-| `LIVEKIT_URL` | ✅ | [LiveKit Cloud dashboard](https://cloud.livekit.io) → your project URL |
-| `LIVEKIT_API_KEY` | ✅ | LiveKit Cloud → API Keys |
-| `LIVEKIT_API_SECRET` | ✅ | LiveKit Cloud → API Keys |
-| `GROQ_API_KEY` | optional | [console.groq.com](https://console.groq.com) — only needed if you switch `LLM_PROVIDER` to `"groq"` |
-| `SARVAM_API_KEY` | ✅ (default STT) | [dashboard.sarvam.ai](https://dashboard.sarvam.ai) |
-| `OPENAI_API_KEY` | ✅ (default TTS) | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
-| `DEEPGRAM_API_KEY` | optional | [console.deepgram.com](https://console.deepgram.com) |
-| `GOOGLE_APPLICATION_CREDENTIALS` | optional | GCP service-account JSON path — only for `STT_PROVIDER = "google"` |
-| `GOOGLE_API_KEY` | ✅ (default LLM) | [aistudio.google.com](https://aistudio.google.com/projects) |
-| `SUPABASE_URL` | optional | [supabase.com](https://supabase.com) — for the ticketing tool |
-| `SUPABASE_API_KEY` | optional | Supabase project → API settings |
+| `LIVEKIT_URL` | **Required** | [LiveKit Console Project URI](https://cloud.livekit.io) |
+| `LIVEKIT_API_KEY` | **Required** | LiveKit Platform Authentication |
+| `LIVEKIT_API_SECRET` | **Required** | LiveKit Platform Authentication |
+| `SARVAM_API_KEY` | **Required** | Base STT Provider API ([dashboard.sarvam.ai](https://dashboard.sarvam.ai)) |
+| `OPENAI_API_KEY` | **Required** | Base TTS Provider API ([platform.openai.com](https://platform.openai.com/api-keys)) |
+| `GOOGLE_API_KEY` | **Required** | Base LLM Provider API ([aistudio.google.com](https://aistudio.google.com/projects)) |
+| `GROQ_API_KEY` | Optional | Low-Latency LLM Fallback ([console.groq.com](https://console.groq.com)) |
+| `DEEPGRAM_API_KEY` | Optional | High-Fidelity STT Alternative ([console.deepgram.com](https://console.deepgram.com)) |
+| `SUPABASE_URL` | Optional | Database Engine Endpoint ([supabase.com](https://supabase.com)) |
+| `SUPABASE_API_KEY` | Optional | Database Authentication |
 
 ---
 
-## Switching providers
+## 🛠 Advanced Usage
 
-Open `agent_friday.py` and change the provider constants at the top:
+### Dynamic Engine Switching
+Modify underlying pipeline algorithms rapidly by updating global constants in `agent_kira.py`:
 
 ```python
-STT_PROVIDER = "sarvam"   # "sarvam" | "whisper"
-LLM_PROVIDER = "gemini"   # "gemini" | "openai"
-TTS_PROVIDER = "openai"   # "openai" | "sarvam"
+STT_PROVIDER = "sarvam"   # Supported: "sarvam" | "whisper"
+LLM_PROVIDER = "gemini"   # Supported: "gemini" | "openai"
+TTS_PROVIDER = "openai"   # Supported: "openai" | "sarvam"
 ```
 
----
+### Developing New MCP Tools
+Extend K.I.R.A's native capabilities by creating new MCP tools:
+1. Initialize a new logic module in `kira/tools/` (e.g. `jira.py`).
+2. Utilize the `@mcp.tool()` decorator on execution logic and wrap it within a `register(mcp)` function.
+3. Import your function in `kira/tools/__init__.py`. 
 
-## Adding a new tool
-
-1. Create or open a file in `friday/tools/`
-2. Define a `register(mcp)` function and decorate tools with `@mcp.tool()`
-3. Import and call `register(mcp)` inside `friday/tools/__init__.py`
-
-The MCP server will pick it up on next start.
+The MCP server will automatically document and expose your tool to the LLM on reboot.
 
 ---
 
-## Tech stack
+## 🧩 Tech Stack
 
-- **[FastMCP](https://github.com/jlowin/fastmcp)** — MCP server framework
-- **[LiveKit Agents](https://github.com/livekit/agents)** — real-time voice pipeline
-- **Sarvam Saaras v3** — STT (Indian-English optimised)
-- **Google Gemini 2.5 Flash** — LLM
-- **OpenAI TTS** (`nova` voice) — TTS
-- **[uv](https://github.com/astral-sh/uv)** — fast Python package manager
+Modern. Fast. Scalable.
+
+- **[FastMCP](https://github.com/jlowin/fastmcp)** — Highly scalable Model Context Protocol backbone
+- **[LiveKit Agents](https://github.com/livekit/agents)** — Low-latency WebRTC routing
+- **[Sarvam Saaras v3](https://sarvam.ai/)** — Context-aware, diverse-accent optimized STT
+- **[Google Gemini Flash](https://deepmind.google/technologies/gemini/)** — Advanced multimodal LLM engine
+- **OpenAI TTS** — Expressive human-like voice synthesis models
+- **[uv](https://github.com/astral-sh/uv)** — Impossibly fast Python deployment and packaging 
 
 ---
 
-## License
+## ⚖️ License
 
-MIT
+Distributed under the **MIT** License. See the `LICENSE` file in the root directory for more information.
+
+<p align="right"><a href="#kira">⬆️ Back to Top</a></p>
