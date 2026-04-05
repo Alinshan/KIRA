@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo.png" alt="K.I.R.A Logo" width="250" />
+  <img src="assets/logo.png" alt="K.I.R.A Logo" width="350" />
   <h1>K.I.R.A</h1>
   <p><strong>Knowledge-based Intelligent Response Assistant</strong></p>
 
