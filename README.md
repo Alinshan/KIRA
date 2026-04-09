@@ -20,7 +20,6 @@
 - [Configuration](#environment-variables)
 - [Advanced Usage](#advanced-usage)
 - [Tech Stack](#tech-stack)
-- [License](#license)
 
 ---
 
@@ -198,4 +197,4 @@ Modern. Fast. Scalable.
 
 Distributed under the **MIT** License. See the `LICENSE` file in the root directory for more information.
 
-<p align="right"><a href="#kira">⬆️ Back to Top</a></p>
+
